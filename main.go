@@ -31,28 +31,30 @@ func main() {
 			return
 		}
 
-		if cacheResp, found := cacheServices.ServeRequest(r); found {
+		cacheRequestURL := fmt.Sprintf("%s://%s/%s", "http", r.Host, r.URL.String())
+
+		if cacheResp, found := cacheServices.ServeRequest(r, cacheRequestURL); found {
 			w.Write(cacheResp.Body)
 			return
 		}
 
-		resp, err := appServices.ForwardRequest(r)
+		originResp, err := appServices.ForwardRequest(r)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(500)
 			return
 		}
 
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(originResp.Body)
 
 		go func(body []byte) {
-			resp := *resp
-			resp.Body = io.NopCloser(bytes.NewReader(body))
+			originResp := *originResp
+			originResp.Body = io.NopCloser(bytes.NewReader(body))
 
-			cacheServices.CacheResponse(&resp)
+			cacheServices.CacheResponse(&originResp, cacheRequestURL)
 		}(body)
 
-		w.WriteHeader(resp.StatusCode)
+		w.WriteHeader(originResp.StatusCode)
 		w.Write(body)
 	})
 
