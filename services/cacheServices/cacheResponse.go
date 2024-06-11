@@ -47,7 +47,7 @@ func filterHeader(resp *http.Response) {
 	resp.Header.Del("Connection")
 }
 
-func CacheResponse(originResp *http.Response, cacheRequestURL string) {
+func CacheResponse(originResp *http.Response, cacheRequestKey string) {
 
 	if !respIsCacheable(originResp) {
 		return
@@ -63,5 +63,5 @@ func CacheResponse(originResp *http.Response, cacheRequestURL string) {
 		"body":    body,
 	})
 
-	db.RedisDB.Set(context.Background(), cacheRequestURL, cacheResp, 0)
+	db.RedisDB.Set(context.Background(), cacheRequestKey, cacheResp, 0)
 }

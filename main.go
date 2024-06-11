@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"slices"
 )
 
 func main() {
@@ -31,9 +32,12 @@ func main() {
 			return
 		}
 
-		cacheRequestURL := fmt.Sprintf("%s://%s/%s", "http", r.Host, r.URL.String())
+		vary := r.Header.Values("Vary")
+		slices.Sort(vary)
 
-		if cacheResp, found := cacheServices.ServeRequest(r, cacheRequestURL); found {
+		cacheRequestKey := fmt.Sprintf("%s://%s/%s ~ %s", "http", r.Host, r.URL.String(), vary)
+
+		if cacheResp, found := cacheServices.ServeRequest(r, cacheRequestKey); found {
 			w.Write(cacheResp.Body)
 			return
 		}
@@ -51,7 +55,7 @@ func main() {
 			originResp := *originResp
 			originResp.Body = io.NopCloser(bytes.NewReader(body))
 
-			cacheServices.CacheResponse(&originResp, cacheRequestURL)
+			cacheServices.CacheResponse(&originResp, cacheRequestKey)
 		}(body)
 
 		w.WriteHeader(originResp.StatusCode)
