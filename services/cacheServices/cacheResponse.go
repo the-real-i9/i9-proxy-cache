@@ -1,7 +1,11 @@
 package cacheServices
 
 import (
+	"context"
+	"encoding/json"
 	"i9pxc/appTypes"
+	"i9pxc/db"
+	"io"
 	"net/http"
 )
 
@@ -34,15 +38,13 @@ func respIsCacheable(resp *http.Response) bool {
 	return true
 }
 
-func filterHeader(header http.Header) http.Header {
-	connHdVals := header.Values("Connection")
+func filterHeader(resp *http.Response) {
+	connHdVals := resp.Header.Values("Connection")
 	for _, hdVal := range connHdVals {
-		header.Del(hdVal)
+		resp.Header.Del(hdVal)
 	}
 
-	header.Del("Connection")
-
-	return header
+	resp.Header.Del("Connection")
 }
 
 func CacheResponse(originResp *http.Response, cacheRequestURL string) {
@@ -51,5 +53,15 @@ func CacheResponse(originResp *http.Response, cacheRequestURL string) {
 		return
 	}
 
-	header := filterHeader(originResp.Header)
+	filterHeader(originResp)
+
+	body, _ := io.ReadAll(originResp.Body)
+
+	cacheResp, _ := json.Marshal(map[string]any{
+		"header":  originResp.Header,
+		"trailer": originResp.Trailer,
+		"body":    body,
+	})
+
+	db.RedisDB.Set(context.Background(), cacheRequestURL, cacheResp, 0)
 }
