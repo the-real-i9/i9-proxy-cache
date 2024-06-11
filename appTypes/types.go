@@ -15,15 +15,14 @@ type CacheCtrl struct {
 	dirsMap map[string]any
 }
 
-func (dm *CacheCtrl) Parse(cacheCtrlDir string) {
-	dirs := strings.Split(cacheCtrlDir, ", ")
+func (dm *CacheCtrl) Parse(cacheCtrlDirs []string) {
 
 	dirsMap := make(map[string]any)
 
-	for _, ccv := range dirs {
-		key, value, _ := strings.Cut(ccv, "=")
+	for _, ccd := range cacheCtrlDirs {
+		key, value, _ := strings.Cut(ccd, "=")
 
-		dirsMap[key] = value
+		dirsMap[key] = strings.ToLower(value)
 	}
 
 	dm.dirsMap = dirsMap
