@@ -8,7 +8,7 @@ import (
 )
 
 func revalidate(r *http.Request, cacheData appTypes.CacheData, cacheRequestKey string) (appTypes.CacheRespT, error) {
-	resp, err := appServices.RevalidateRequest(r.URL.String(), cacheData.Header.Get("Last-Modified"), cacheData.Header.Get("E-Tag"))
+	resp, err := appServices.RevalidateRequest(r.URL.String(), cacheData.Header.Get("Last-Modified"), cacheData.Header.Get("ETag"))
 	if err != nil {
 		return appTypes.CacheRespT{}, err
 	}

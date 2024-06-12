@@ -53,7 +53,10 @@ func main() {
 
 		w.WriteHeader(cacheResp.StatusCode)
 
-		w.Write(cacheResp.Body)
+		_, w_err := w.Write(cacheResp.Body)
+		if w_err != nil {
+			log.Println(w_err)
+		}
 	})
 
 	fmt.Printf("Server listening @ %s\n", cacheServerUrl)

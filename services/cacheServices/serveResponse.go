@@ -12,7 +12,7 @@ func ServeResponse(r *http.Request, cacheRequestKey string) (appTypes.CacheRespT
 	}
 
 	cc := &appTypes.CacheControl{}
-	cc.Parse(cacheData.Header.Values("Cache-Control"))
+	cc.Parse(cacheData.Header.Get("Cache-Control"))
 
 	if cc.Has("no-cache") {
 		return strictRevalidate(r, cacheData, cacheRequestKey)

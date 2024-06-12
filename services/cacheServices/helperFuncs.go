@@ -51,7 +51,7 @@ func responseIsStale(cachedAt time.Time, cc *appTypes.CacheControl, expires stri
 }
 
 func genCacheResp(cacheData appTypes.CacheData) (appTypes.CacheRespT, error) {
-	return appTypes.CacheRespT{StatusCode: http.StatusNotModified, Header: cacheData.Header, Body: cacheData.Body}, nil
+	return appTypes.CacheRespT{StatusCode: http.StatusOK, Header: cacheData.Header, Body: cacheData.Body}, nil
 }
 
 func filterHeader(header http.Header) http.Header {

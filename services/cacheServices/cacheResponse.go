@@ -3,7 +3,6 @@ package cacheServices
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"i9pxc/appTypes"
 	"i9pxc/db"
 	"net/http"
@@ -12,29 +11,25 @@ import (
 
 func respIsCacheable(resp *http.Response) bool {
 	cc := &appTypes.CacheControl{}
-	cc.Parse(resp.Header.Values("Cache-Control"))
+	cc.Parse(resp.Header.Get("Cache-Control"))
 
 	if resp.StatusCode != http.StatusOK {
 		return false
 	}
 
 	if cc.Has("no-store") && !(cc.Has("must-understand") && resp.StatusCode == http.StatusOK) {
-		fmt.Println("no-store")
 		return false
 	}
 
 	if cc.Has("private") {
-		fmt.Println("private")
 		return false
 	}
 
 	if resp.Header.Get("Authorization") != "" && !(cc.Has("public") || cc.Has("s-max-age") || cc.Has("must-revalidate")) {
-		fmt.Println("Authorization")
 		return false
 	}
 
 	if !(cc.Has("max-age") || cc.Has("s-max-age") || cc.Has("no-cache") || resp.Header.Get("Expires") != "") {
-		fmt.Println("no max age")
 		return false
 	}
 

@@ -22,11 +22,10 @@ type CacheControl struct {
 	dirsMap map[string]any
 }
 
-func (cc *CacheControl) Parse(ccDirs []string) {
-
+func (cc *CacheControl) Parse(ccStr string) {
 	dirsMap := make(map[string]any)
 
-	for _, ccd := range ccDirs {
+	for _, ccd := range strings.Split(ccStr, ", ") {
 		key, value, _ := strings.Cut(ccd, "=")
 
 		dirsMap[key] = strings.ToLower(value)
