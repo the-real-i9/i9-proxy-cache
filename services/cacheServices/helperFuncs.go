@@ -31,6 +31,21 @@ func responseIsNearlyStale(cachedAt time.Time, maxAge float64) bool {
 	return time.Since(cachedAt).Seconds() > (0.9 * maxAge)
 }
 
-func genCacheResp(body []byte) (appTypes.CacheRespT, error) {
-	return appTypes.CacheRespT{StatusCode: http.StatusOK, Body: body}, nil
+func genCacheResp(cacheData appTypes.CacheData) (appTypes.CacheRespT, error) {
+	return appTypes.CacheRespT{StatusCode: http.StatusOK, Header: cacheData.Header, Body: cacheData.Body}, nil
+}
+
+func filterHeader(header http.Header) http.Header {
+	header = header.Clone()
+
+	connHdVals := header.Values("Connection")
+	for _, hdVal := range connHdVals {
+		header.Del(hdVal)
+	}
+
+	header.Del("Connection")
+	header.Del("Vary")
+	header.Del("Server")
+
+	return header
 }

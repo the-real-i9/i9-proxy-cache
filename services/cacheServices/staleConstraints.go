@@ -15,7 +15,7 @@ func staleWhileRevalidate(r *http.Request, cc appTypes.CacheControl, cacheData a
 		return revalidate(r, cacheData, cacheRequestKey)
 	}
 
-	return genCacheResp(cacheData.Body)
+	return genCacheResp(cacheData)
 }
 
 func staleIfError(r *http.Request, cc appTypes.CacheControl, cacheData appTypes.CacheData, cacheRequestKey string) (appTypes.CacheRespT, error) {
@@ -30,7 +30,7 @@ func staleIfError(r *http.Request, cc appTypes.CacheControl, cacheData appTypes.
 
 	if resp.StatusCode >= 500 && resp.StatusCode < 600 && !responseIsStale(cacheData.CachedAt, getMaxAge(cc)+errGraceSec) {
 
-		return genCacheResp(cacheData.Body)
+		return genCacheResp(cacheData)
 	}
 
 	return resp, err

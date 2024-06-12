@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"i9pxc/appTypes"
 	"i9pxc/db"
-	"io"
 	"net/http"
 	"time"
 )
@@ -39,33 +38,15 @@ func respIsCacheable(resp *http.Response) bool {
 	return true
 }
 
-func filterHeader(header http.Header) http.Header {
-	header = header.Clone()
-
-	connHdVals := header.Values("Connection")
-	for _, hdVal := range connHdVals {
-		header.Del(hdVal)
-	}
-
-	header.Del("Connection")
-
-	return header
-}
-
-func CacheResponse(originResp *http.Response, cacheRequestKey string) {
-	defer originResp.Body.Close()
-
+func CacheResponse(originResp *http.Response, cacheRequestKey string, body []byte) {
 	if !respIsCacheable(originResp) {
 		return
 	}
 
 	originResp.Header = filterHeader(originResp.Header)
 
-	body, _ := io.ReadAll(originResp.Body)
-
 	cacheData, _ := json.Marshal(map[string]any{
 		"header":   originResp.Header,
-		"trailer":  originResp.Trailer,
 		"body":     body,
 		"cachedAt": time.Now(),
 	})

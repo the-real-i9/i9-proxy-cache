@@ -1,7 +1,6 @@
 package cacheServices
 
 import (
-	"bytes"
 	"i9pxc/appTypes"
 	"i9pxc/services/appServices"
 	"io"
@@ -18,12 +17,7 @@ func handleMissingResp(r *http.Request, cacheRequestKey string) (appTypes.CacheR
 
 	body, _ := io.ReadAll(originResp.Body)
 
-	go func(body []byte) {
-		originResp := *originResp
-		originResp.Body = io.NopCloser(bytes.NewReader(body))
+	go CacheResponse(originResp, cacheRequestKey, body)
 
-		CacheResponse(&originResp, cacheRequestKey)
-	}(body)
-
-	return appTypes.CacheRespT{StatusCode: originResp.StatusCode, Body: body}, nil
+	return appTypes.CacheRespT{StatusCode: originResp.StatusCode, Header: filterHeader(originResp.Header), Body: body}, nil
 }

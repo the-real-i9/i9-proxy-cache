@@ -1,7 +1,6 @@
 package cacheServices
 
 import (
-	"bytes"
 	"i9pxc/appTypes"
 	"i9pxc/services/appServices"
 	"io"
@@ -16,21 +15,16 @@ func revalidate(r *http.Request, cacheData appTypes.CacheData, cacheRequestKey s
 
 	if resp.StatusCode == http.StatusNotModified {
 		go RefreshCacheResponse(cacheRequestKey)
-		return appTypes.CacheRespT{StatusCode: http.StatusOK, Body: cacheData.Body}, nil
+		return genCacheResp(cacheData)
 	}
 
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
 
-	go func(body []byte) {
-		resp := *resp
-		resp.Body = io.NopCloser(bytes.NewReader(body))
+	go CacheResponse(resp, cacheRequestKey, body)
 
-		CacheResponse(&resp, cacheRequestKey)
-	}(body)
-
-	return appTypes.CacheRespT{StatusCode: resp.StatusCode, Body: body}, nil
+	return appTypes.CacheRespT{StatusCode: resp.StatusCode, Header: filterHeader(resp.Header), Body: body}, nil
 }
 
 func nonStrictRevalidate(r *http.Request, cacheData appTypes.CacheData, cacheRequestKey string) (appTypes.CacheRespT, error) {
@@ -40,7 +34,7 @@ func nonStrictRevalidate(r *http.Request, cacheData appTypes.CacheData, cacheReq
 	}
 
 	if resp.StatusCode >= 500 && resp.StatusCode < 600 {
-		return genCacheResp(cacheData.Body)
+		return genCacheResp(cacheData)
 	}
 
 	return resp, err

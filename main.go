@@ -38,16 +38,24 @@ func main() {
 
 		cacheRequestKey := fmt.Sprintf("%s%s ~ %s", cacheServerUrl, r.URL.String(), vary)
 
-		resp, err := cacheServices.ServeResponse(r, cacheRequestKey)
+		cacheResp, err := cacheServices.ServeResponse(r, cacheRequestKey)
 		if err != nil {
+			log.Println(err)
 			w.WriteHeader(500)
 			return
 		}
 
-		w.WriteHeader(resp.StatusCode)
-		w.Write(resp.Body)
+		for key, values := range cacheResp.Header {
+			for _, value := range values {
+				w.Header().Add(key, value)
+			}
+		}
+
+		w.WriteHeader(cacheResp.StatusCode)
+
+		w.Write(cacheResp.Body)
 	})
 
 	fmt.Printf("Server listening @ %s\n", cacheServerUrl)
-	http.ListenAndServe(cacheServerUrl, nil)
+	http.ListenAndServe(os.Getenv("CACHE_SERVER_PORT"), nil)
 }

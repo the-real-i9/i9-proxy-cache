@@ -8,12 +8,12 @@ import (
 
 type CacheRespT struct {
 	StatusCode int
+	Header     http.Header
 	Body       []byte
 }
 
 type CacheData struct {
 	Header   http.Header
-	Trailer  http.Header
 	Body     []byte
 	CachedAt time.Time
 }

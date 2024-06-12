@@ -1,7 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"net/http"
+	"os"
 	"testing"
 )
 
@@ -10,8 +12,14 @@ func TestTry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	} */
-	var x float64
-	fmt.Sscanf("434000", "%f", &x)
 
-	fmt.Println(x)
+	res, _ := http.Get("https://github.com")
+
+	res1 := *res
+
+	res1.Request = nil
+
+	bt, _ := json.MarshalIndent(res1, "", " ")
+
+	os.Stdout.Write(bt)
 }

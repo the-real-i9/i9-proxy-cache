@@ -38,5 +38,5 @@ func ServeResponse(r *http.Request, cacheRequestKey string) (appTypes.CacheRespT
 		go revalidate(r, cacheData, cacheRequestKey)
 	}
 
-	return genCacheResp(cacheData.Body)
+	return genCacheResp(cacheData)
 }
