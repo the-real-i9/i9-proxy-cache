@@ -11,14 +11,14 @@ func ServeResponse(r *http.Request, cacheRequestKey string) (appTypes.CacheRespT
 		return handleMissingResp(r, cacheRequestKey)
 	}
 
-	cc := appTypes.CacheControl{}
+	cc := &appTypes.CacheControl{}
 	cc.Parse(cacheData.Header.Values("Cache-Control"))
 
 	if cc.Has("no-cache") {
 		return strictRevalidate(r, cacheData, cacheRequestKey)
 	}
 
-	if responseIsStale(cacheData.CachedAt, getMaxAge(cc)) {
+	if responseIsStale(cacheData.CachedAt, cc, cacheData.Header.Get("Expires"), 0, false) {
 		if cc.Has("must-revalidate") {
 			return strictRevalidate(r, cacheData, cacheRequestKey)
 		}
@@ -34,7 +34,7 @@ func ServeResponse(r *http.Request, cacheRequestKey string) (appTypes.CacheRespT
 		return nonStrictRevalidate(r, cacheData, cacheRequestKey)
 	}
 
-	if responseIsNearlyStale(cacheData.CachedAt, getMaxAge(cc)) {
+	if responseIsStale(cacheData.CachedAt, cc, cacheData.Header.Get("Expires"), 0, true) {
 		go revalidate(r, cacheData, cacheRequestKey)
 	}
 

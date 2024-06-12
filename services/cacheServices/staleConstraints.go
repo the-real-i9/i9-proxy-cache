@@ -1,34 +1,30 @@
 package cacheServices
 
 import (
-	"fmt"
 	"i9pxc/appTypes"
 	"net/http"
+	"time"
 )
 
-func staleWhileRevalidate(r *http.Request, cc appTypes.CacheControl, cacheData appTypes.CacheData, cacheRequestKey string) (appTypes.CacheRespT, error) {
-	var revGraceSec float64
+func staleWhileRevalidate(r *http.Request, cc *appTypes.CacheControl, cacheData appTypes.CacheData, cacheRequestKey string) (appTypes.CacheRespT, error) {
+	extraTime, _ := time.ParseDuration(cc.Get("stale-while-revalidate") + "s")
 
-	fmt.Sscanf(cc.Get("stale-while-revalidate"), "%f", &revGraceSec)
-
-	if responseIsStale(cacheData.CachedAt, getMaxAge(cc)+revGraceSec) {
+	if responseIsStale(cacheData.CachedAt, cc, cacheData.Header.Get("Expires"), extraTime, false) {
 		return revalidate(r, cacheData, cacheRequestKey)
 	}
 
 	return genCacheResp(cacheData)
 }
 
-func staleIfError(r *http.Request, cc appTypes.CacheControl, cacheData appTypes.CacheData, cacheRequestKey string) (appTypes.CacheRespT, error) {
+func staleIfError(r *http.Request, cc *appTypes.CacheControl, cacheData appTypes.CacheData, cacheRequestKey string) (appTypes.CacheRespT, error) {
 	resp, err := revalidate(r, cacheData, cacheRequestKey)
 	if err != nil {
 		return appTypes.CacheRespT{}, err
 	}
 
-	var errGraceSec float64
+	extraTime, _ := time.ParseDuration(cc.Get("stale-if-error") + "s")
 
-	fmt.Sscanf(cc.Get("stale-if-error"), "%f", &errGraceSec)
-
-	if resp.StatusCode >= 500 && resp.StatusCode < 600 && !responseIsStale(cacheData.CachedAt, getMaxAge(cc)+errGraceSec) {
+	if resp.StatusCode >= 500 && resp.StatusCode < 600 && !responseIsStale(cacheData.CachedAt, cc, cacheData.Header.Get("Expires"), extraTime, false) {
 
 		return genCacheResp(cacheData)
 	}

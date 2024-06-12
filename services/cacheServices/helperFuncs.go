@@ -1,38 +1,57 @@
 package cacheServices
 
 import (
-	"fmt"
 	"i9pxc/appTypes"
 	"net/http"
 	"time"
 )
 
-func getMaxAge(cc appTypes.CacheControl) float64 {
-	var maxAge float64
+/*
+func getMaxAge(cc *appTypes.CacheControl, expires string) time.Duration {
 
 	if cc.Has("s-max-age") {
-		fmt.Sscanf(cc.Get("s-max-age"), "%f", &maxAge)
-		return maxAge
+		sma, _ := time.ParseDuration(cc.Get("s-max-age") + "s")
+
+		return sma
 	}
 
-	fmt.Sscanf(cc.Get("max-age"), "%f", &maxAge)
+	if cc.Has("max-age") {
+		sma, _ := time.ParseDuration(cc.Get("max-age") + "s")
 
-	return maxAge
+		return sma
+	}
 
-}
+	exp, _ := time.Parse(time.Layout, expires)
 
-func responseIsStale(cachedAt time.Time, maxAge float64) bool {
+	return
+} */
 
-	return time.Since(cachedAt).Seconds() > maxAge
-}
+func responseIsStale(cachedAt time.Time, cc *appTypes.CacheControl, expires string, extraTime time.Duration, nearly bool) bool {
 
-func responseIsNearlyStale(cachedAt time.Time, maxAge float64) bool {
+	n := 0 * time.Second
 
-	return time.Since(cachedAt).Seconds() > (0.9 * maxAge)
+	if nearly {
+		n = 24 * time.Hour
+	}
+
+	if cc.Has("s-max-age") {
+		sma, _ := time.ParseDuration(cc.Get("s-max-age") + "s")
+
+		return time.Since(cachedAt) > ((sma - n) + extraTime)
+	}
+
+	if cc.Has("max-age") {
+		ma, _ := time.ParseDuration(cc.Get("max-age") + "s")
+
+		return time.Since(cachedAt) > ((ma - n) + extraTime)
+	}
+
+	exp, _ := time.Parse(time.Layout, expires)
+	return time.Now().Before(exp.Add(-n).Add(extraTime))
 }
 
 func genCacheResp(cacheData appTypes.CacheData) (appTypes.CacheRespT, error) {
-	return appTypes.CacheRespT{StatusCode: http.StatusOK, Header: cacheData.Header, Body: cacheData.Body}, nil
+	return appTypes.CacheRespT{StatusCode: http.StatusNotModified, Header: cacheData.Header, Body: cacheData.Body}, nil
 }
 
 func filterHeader(header http.Header) http.Header {
