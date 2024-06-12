@@ -7,10 +7,11 @@ import (
 	"i9pxc/db"
 	"io"
 	"net/http"
+	"time"
 )
 
 func respIsCacheable(resp *http.Response) bool {
-	cc := appTypes.CacheCtrl{}
+	cc := appTypes.CacheControl{}
 	cc.Parse(resp.Header.Values("Cache-Control"))
 
 	if resp.StatusCode != http.StatusOK {
@@ -31,37 +32,57 @@ func respIsCacheable(resp *http.Response) bool {
 		return false
 	}
 
-	if !(cc.Has("public") || cc.Has("max-age") || cc.Has("s-max-age") || cc.Has("no-cache") || resp.Header.Get("Expires") != "") {
+	if !(cc.Has("max-age") || cc.Has("s-max-age") || cc.Has("no-cache") || resp.Header.Get("Expires") != "") {
 		return false
 	}
 
 	return true
 }
 
-func filterHeader(resp *http.Response) {
-	connHdVals := resp.Header.Values("Connection")
+func filterHeader(header http.Header) http.Header {
+	header = header.Clone()
+
+	connHdVals := header.Values("Connection")
 	for _, hdVal := range connHdVals {
-		resp.Header.Del(hdVal)
+		header.Del(hdVal)
 	}
 
-	resp.Header.Del("Connection")
+	header.Del("Connection")
+
+	return header
 }
 
 func CacheResponse(originResp *http.Response, cacheRequestKey string) {
+	defer originResp.Body.Close()
 
 	if !respIsCacheable(originResp) {
 		return
 	}
 
-	filterHeader(originResp)
+	originResp.Header = filterHeader(originResp.Header)
 
 	body, _ := io.ReadAll(originResp.Body)
 
-	cacheResp, _ := json.Marshal(map[string]any{
-		"header":  originResp.Header,
-		"trailer": originResp.Trailer,
-		"body":    body,
+	cacheData, _ := json.Marshal(map[string]any{
+		"header":   originResp.Header,
+		"trailer":  originResp.Trailer,
+		"body":     body,
+		"cachedAt": time.Now(),
 	})
 
-	db.RedisDB.Set(context.Background(), cacheRequestKey, cacheResp, 0)
+	db.RedisDB.Set(context.Background(), cacheRequestKey, cacheData, 0)
+}
+
+func RefreshCacheResponse(cacheRequestKey string) {
+
+	var cacheData map[string]any
+
+	dbRes, _ := db.RedisDB.Get(context.Background(), cacheRequestKey).Result()
+	json.Unmarshal([]byte(dbRes), &cacheData)
+
+	cacheData["cachedAt"] = time.Now()
+
+	cacheDataJSON, _ := json.Marshal(cacheData)
+
+	db.RedisDB.Set(context.Background(), cacheRequestKey, cacheDataJSON, 0)
 }

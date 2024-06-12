@@ -5,22 +5,22 @@ import (
 	"encoding/json"
 	"i9pxc/appTypes"
 	"i9pxc/db"
-	"net/http"
 
 	"github.com/redis/go-redis/v9"
 )
 
-func ServeRequest(r *http.Request, cacheRequestKey string) (appTypes.CacheResp, bool) {
+func retrieveResp(cacheRequestKey string) (appTypes.CacheData, bool) {
 	ctx := context.Background()
 
+	var cacheData appTypes.CacheData
+
 	dbResp, err := db.RedisDB.Get(ctx, cacheRequestKey).Result()
+
 	if err == redis.Nil {
-		return appTypes.CacheResp{}, false
+		return appTypes.CacheData{}, false
 	}
 
-	var cacheResp appTypes.CacheResp
+	json.Unmarshal([]byte(dbResp), &cacheData)
 
-	json.Unmarshal([]byte(dbResp), &cacheResp)
-
-	return cacheResp, true
+	return cacheData, true
 }

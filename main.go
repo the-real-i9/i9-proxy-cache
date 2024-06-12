@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"i9pxc/helpers"
 	"i9pxc/services/appServices"
 	"i9pxc/services/cacheServices"
-	"io"
 	"log"
 	"net/http"
+	"os"
 	"slices"
 )
 
@@ -17,6 +16,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	cacheServerUrl := os.Getenv("CACHE_SERVER_URL")
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
@@ -35,33 +36,18 @@ func main() {
 		vary := r.Header.Values("Vary")
 		slices.Sort(vary)
 
-		cacheRequestKey := fmt.Sprintf("%s://%s/%s ~ %s", "http", r.Host, r.URL.String(), vary)
+		cacheRequestKey := fmt.Sprintf("%s%s ~ %s", cacheServerUrl, r.URL.String(), vary)
 
-		if cacheResp, found := cacheServices.ServeRequest(r, cacheRequestKey); found {
-			w.Write(cacheResp.Body)
-			return
-		}
-
-		originResp, err := appServices.ForwardRequest(r)
+		resp, err := cacheServices.ServeResponse(r, cacheRequestKey)
 		if err != nil {
-			log.Println(err)
 			w.WriteHeader(500)
 			return
 		}
 
-		body, _ := io.ReadAll(originResp.Body)
-
-		go func(body []byte) {
-			originResp := *originResp
-			originResp.Body = io.NopCloser(bytes.NewReader(body))
-
-			cacheServices.CacheResponse(&originResp, cacheRequestKey)
-		}(body)
-
-		w.WriteHeader(originResp.StatusCode)
-		w.Write(body)
+		w.WriteHeader(resp.StatusCode)
+		w.Write(resp.Body)
 	})
 
-	fmt.Println("Server listening @ http://localhost:5000")
-	http.ListenAndServe(":5000", nil)
+	fmt.Printf("Server listening @ %s\n", cacheServerUrl)
+	http.ListenAndServe(cacheServerUrl, nil)
 }

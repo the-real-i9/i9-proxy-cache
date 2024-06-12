@@ -3,39 +3,46 @@ package appTypes
 import (
 	"net/http"
 	"strings"
+	"time"
 )
 
-type CacheResp struct {
-	Header  http.Header
-	Trailer http.Header
-	Body    []byte
+type CacheRespT struct {
+	StatusCode int
+	Body       []byte
 }
 
-type CacheCtrl struct {
+type CacheData struct {
+	Header   http.Header
+	Trailer  http.Header
+	Body     []byte
+	CachedAt time.Time
+}
+
+type CacheControl struct {
 	dirsMap map[string]any
 }
 
-func (dm *CacheCtrl) Parse(cacheCtrlDirs []string) {
+func (cc *CacheControl) Parse(ccDirs []string) {
 
 	dirsMap := make(map[string]any)
 
-	for _, ccd := range cacheCtrlDirs {
+	for _, ccd := range ccDirs {
 		key, value, _ := strings.Cut(ccd, "=")
 
 		dirsMap[key] = strings.ToLower(value)
 	}
 
-	dm.dirsMap = dirsMap
+	cc.dirsMap = dirsMap
 }
 
-func (dm CacheCtrl) Has(key string) bool {
-	return dm.dirsMap[key] != nil
+func (cc CacheControl) Has(key string) bool {
+	return cc.dirsMap[key] != nil
 }
 
-func (dm CacheCtrl) Get(key string) string {
-	if dm.dirsMap[key] == nil {
+func (cc CacheControl) Get(key string) string {
+	if cc.dirsMap[key] == nil {
 		panic("check if key exists before getting")
 	}
 
-	return dm.dirsMap[key].(string)
+	return cc.dirsMap[key].(string)
 }
