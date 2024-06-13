@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"i9pxc/appTypes"
 	"i9pxc/db"
+	"i9pxc/helpers"
 	"net/http"
 	"time"
 )
@@ -36,12 +37,12 @@ func respIsCacheable(resp *http.Response) bool {
 	return true
 }
 
-func CacheResponse(originResp *http.Response, cacheRequestKey string, body []byte) {
+func CacheResponse(originResp *http.Response, cacheKey string, body []byte) {
 	if !respIsCacheable(originResp) {
 		return
 	}
 
-	originResp.Header = filterHeader(originResp.Header)
+	originResp.Header = helpers.FilterHeader(originResp.Header)
 
 	cacheData, _ := json.Marshal(map[string]any{
 		"header":   originResp.Header,
@@ -49,19 +50,19 @@ func CacheResponse(originResp *http.Response, cacheRequestKey string, body []byt
 		"cachedAt": time.Now(),
 	})
 
-	db.RedisDB.Set(context.Background(), cacheRequestKey, cacheData, 0)
+	db.RedisDB.Set(context.Background(), cacheKey, cacheData, 0)
 }
 
-func RefreshCacheResponse(cacheRequestKey string) {
+func RefreshCacheResponse(cacheKey string) {
 
 	var cacheData map[string]any
 
-	dbRes, _ := db.RedisDB.Get(context.Background(), cacheRequestKey).Result()
+	dbRes, _ := db.RedisDB.Get(context.Background(), cacheKey).Result()
 	json.Unmarshal([]byte(dbRes), &cacheData)
 
 	cacheData["cachedAt"] = time.Now()
 
 	cacheDataJSON, _ := json.Marshal(cacheData)
 
-	db.RedisDB.Set(context.Background(), cacheRequestKey, cacheDataJSON, 0)
+	db.RedisDB.Set(context.Background(), cacheKey, cacheDataJSON, 0)
 }

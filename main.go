@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"slices"
 )
 
 func main() {
@@ -33,23 +32,16 @@ func main() {
 			return
 		}
 
-		vary := r.Header.Values("Vary")
-		slices.Sort(vary)
+		cacheKey := helpers.GenCacheKey(cacheServerUrl, r)
 
-		cacheRequestKey := fmt.Sprintf("%s%s ~ %s", cacheServerUrl, r.URL.String(), vary)
-
-		cacheResp, err := cacheServices.ServeResponse(r, cacheRequestKey)
+		cacheResp, err := cacheServices.ServeResponse(r, cacheKey)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(500)
 			return
 		}
 
-		for key, values := range cacheResp.Header {
-			for _, value := range values {
-				w.Header().Add(key, value)
-			}
-		}
+		helpers.CopyHeader(w.Header(), cacheResp.Header)
 
 		w.WriteHeader(cacheResp.StatusCode)
 

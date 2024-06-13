@@ -22,7 +22,7 @@ func ForwardRequest(r *http.Request) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
-func RevalidateRequest(reqURL, lastModified, eTag string) (*http.Response, error) {
+func RevalidationRequest(reqURL, lastModified, eTag string) (*http.Response, error) {
 	originRequestURL := fmt.Sprintf("%s%s", os.Getenv("ORIGIN_SERVER_URL"), reqURL)
 
 	req, err := http.NewRequest("GET", originRequestURL, nil)
