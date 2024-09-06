@@ -2,7 +2,7 @@ package helpers
 
 import (
 	"bufio"
-	"i9pxc/db"
+	"i9pxc/src/db"
 	"log"
 	"os"
 	"strings"

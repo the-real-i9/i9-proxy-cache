@@ -1,9 +1,9 @@
 package cacheServices
 
 import (
-	"i9pxc/appTypes"
-	"i9pxc/helpers"
-	"i9pxc/services/appServices"
+	"i9pxc/src/appTypes"
+	"i9pxc/src/helpers"
+	"i9pxc/src/services/appServices"
 	"io"
 	"net/http"
 	"time"

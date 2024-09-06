@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"i9pxc/appTypes"
+	"i9pxc/src/appTypes"
 	"log"
 	"net/http"
 	"strings"

@@ -1,7 +1,7 @@
 package cacheServices
 
 import (
-	"i9pxc/appTypes"
+	"i9pxc/src/appTypes"
 
 	"net/http"
 )

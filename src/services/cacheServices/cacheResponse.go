@@ -3,9 +3,9 @@ package cacheServices
 import (
 	"context"
 	"encoding/json"
-	"i9pxc/appTypes"
-	"i9pxc/db"
-	"i9pxc/helpers"
+	"i9pxc/src/appTypes"
+	"i9pxc/src/db"
+	"i9pxc/src/helpers"
 	"net/http"
 	"time"
 )

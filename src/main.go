@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"i9pxc/helpers"
-	"i9pxc/services/appServices"
-	"i9pxc/services/cacheServices"
+	"i9pxc/src/helpers"
+	"i9pxc/src/services/appServices"
+	"i9pxc/src/services/cacheServices"
 	"log"
 	"net/http"
 	"os"
@@ -51,6 +51,6 @@ func main() {
 		}
 	})
 
-	fmt.Printf("Server listening @ %s\n", cacheServerUrl)
-	http.ListenAndServe(os.Getenv("CACHE_SERVER_PORT"), nil)
+	fmt.Printf("Server listening on %s\n", os.Getenv("PORT"))
+	http.ListenAndServe(os.Getenv("PORT"), nil)
 }
