@@ -24,8 +24,9 @@ func main() {
 	app := fiber.New()
 
 	app.Use(cache.New(cache.Config{
-		Storage:    globals.RedisStore,
-		Expiration: 30 * time.Minute,
+		Storage:              globals.RedisStore,
+		Expiration:           2 * time.Minute,
+		StoreResponseHeaders: true,
 	}))
 
 	app.Get("*", func(c *fiber.Ctx) error {
@@ -35,6 +36,7 @@ func main() {
 
 		res, err := http.Get(os.Getenv("ORIGIN_SERVER") + url)
 		if err != nil {
+			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 		}
 
@@ -52,6 +54,7 @@ func main() {
 
 		data, err := io.ReadAll(res.Body)
 		if err != nil {
+			log.Println(err)
 			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 		}
 
