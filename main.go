@@ -1,56 +1,62 @@
 package main
 
 import (
-	"fmt"
-	"i9pxc/helpers"
-	"i9pxc/services/appServices"
-	"i9pxc/services/cacheServices"
+	"i9pxc/globals"
+	"i9pxc/initializers"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cache"
 )
 
-func main() {
-	err := helpers.ServerInits()
+func init() {
+	err := initializers.Init()
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
-	cacheServerUrl := os.Getenv("CACHE_SERVER_URL")
+func main() {
+	app := fiber.New()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	app.Use(cache.New(cache.Config{
+		Storage:    globals.RedisStore,
+		Expiration: 30 * time.Minute,
+	}))
 
-		if r.Method != "GET" {
-			resp, err := appServices.ForwardRequest(r)
-			if err != nil {
-				log.Println(err)
-				w.WriteHeader(500)
-				return
-			}
+	app.Get("*", func(c *fiber.Ctx) error {
+		url := c.OriginalURL()
 
-			resp.Write(w)
-			return
-		}
+		// agent := fiber.Get(os.Getenv("ORIGIN_SERVER") + url)
 
-		cacheKey := helpers.GenCacheKey(cacheServerUrl, r)
-
-		cacheResp, err := cacheServices.ServeResponse(r, cacheKey)
+		res, err := http.Get(os.Getenv("ORIGIN_SERVER") + url)
 		if err != nil {
-			log.Println(err)
-			w.WriteHeader(500)
-			return
+			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 		}
 
-		helpers.CopyHeader(w.Header(), cacheResp.Header)
-
-		w.WriteHeader(cacheResp.StatusCode)
-
-		_, w_err := w.Write(cacheResp.Body)
-		if w_err != nil {
-			log.Println(w_err)
+		for hKey, hVals := range res.Header {
+			for i, hVal := range hVals {
+				if i == 0 {
+					c.Set(hKey, hVal)
+					continue
+				}
+				c.Append(hKey, hVal)
+			}
 		}
+
+		defer res.Body.Close()
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+		}
+
+		return c.Status(res.StatusCode).Send(data)
 	})
 
-	fmt.Printf("Server listening on %s\n", os.Getenv("PORT"))
-	http.ListenAndServe(os.Getenv("PORT"), nil)
+	log.Fatalln(app.Listen("localhost:" + "5000"))
 }
