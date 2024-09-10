@@ -3,8 +3,8 @@ package cacheServices
 import (
 	"context"
 	"encoding/json"
-	"i9pxc/src/appTypes"
-	"i9pxc/src/db"
+	"i9pxc/appTypes"
+	"i9pxc/db"
 
 	"github.com/redis/go-redis/v9"
 )

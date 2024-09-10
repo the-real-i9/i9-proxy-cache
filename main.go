@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"i9pxc/src/helpers"
-	"i9pxc/src/services/appServices"
-	"i9pxc/src/services/cacheServices"
+	"i9pxc/helpers"
+	"i9pxc/services/appServices"
+	"i9pxc/services/cacheServices"
 	"log"
 	"net/http"
 	"os"
